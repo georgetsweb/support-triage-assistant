@@ -1,0 +1,18 @@
+# Private project instructions (job-specific, not for the public repo)
+CLAUDE.md
+
+# Secrets: never commit API keys
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Data: downloaded dataset and local database are rebuilt by the scripts
+data/raw/
+data/tickets.db
+
+# Trained model files
+models/
