@@ -1,0 +1,4 @@
+# Session 1: data and analysis
+pandas        # tables and analysis
+datasets      # download the ticket dataset from Hugging Face
+matplotlib    # charts for docs/img/
