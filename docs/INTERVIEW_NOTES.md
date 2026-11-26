@@ -71,3 +71,74 @@ Running log of decisions, trade-offs, results and problems. Updated at the end o
 
 ### If I did it again
 - Talk to the support team first to find their real bottleneck before choosing what to build.
+
+---
+
+## Session 2: Machine learning baseline
+
+### What was built
+- `src/classifier.py`: removes duplicate messages, splits 80/20, trains TF-IDF + logistic regression, prints
+  per-category metrics and the most common mistakes, saves a confusion matrix and the model. `predict(text)` returns
+  a category and a confidence.
+- `tests/test_classifier.py`: 4 tests. Three use a tiny made-up dataset, so they run on a fresh clone with no
+  database; one checks the saved model and is skipped if it hasn't been trained.
+
+### How the model works (plain version)
+- **TF-IDF** turns each message into numbers: one per word and word pair ("money back"), weighted up when the word is
+  distinctive (refund) and down when it's everywhere (please, the).
+- **Logistic regression** learns a weight per word per category from the training tickets. A new ticket's score for
+  each category is the sum of its words' weights, turned into probabilities. The highest wins; that probability is
+  the **confidence**.
+- Both are chained in one scikit-learn `Pipeline`, so the same text processing is always applied in training and
+  prediction.
+
+### Decisions and trade-offs
+
+**Removed duplicates before splitting (data leakage)**
+- 2,501 tickets (9%) were near-duplicates; some sentences appeared 10 times. Without removing them, a test ticket
+  could have an identical twin in training, so the test would partly measure memory, not learning.
+- Safe to remove: no message appeared with two different categories.
+
+**Stratified split with a fixed seed**
+- *Stratified:* each category keeps the same share in train and test, so small categories like CANCEL are tested
+  properly.
+- *Fixed seed (42):* the same split every run, so results are reproducible and Session 3 can test the LLM on exactly
+  the same unseen tickets.
+
+**Simple model on purpose**
+- A baseline should be cheap and explainable. If it's good enough, the expensive option needs to justify itself.
+
+### Results (test set: 4,875 unseen tickets)
+
+| Metric | Value |
+|---|---|
+| Accuracy | **99.9%** (7 mistakes) |
+| Lowest per-category F1 | 0.997 |
+| Training + evaluation time | ~5 seconds on a CPU |
+| Model file size | a few MB |
+
+All 7 mistakes involve typos or glued words: "theaddress", "paytment", "adress", "newslettee", "order370795561790".
+The model only knows exact words it has seen, so a misspelt key word becomes invisible to it.
+
+### The important caveat: messy tickets
+Six realistic tickets written by hand (anecdotal, not a benchmark):
+
+| Ticket | Predicted | Confidence | Should be |
+|---|---|---|---|
+| "you charged my card twice this month!!! fix it" | ACCOUNT | 31% | PAYMENT |
+| "the app keeps logging me out every 5 min" | CANCEL | 41% | ACCOUNT |
+| "do u ship to bulgaria" | ACCOUNT | 19% | DELIVERY/SHIPPING |
+| "parcel came... box crushed, kettle broken" | DELIVERY | 28% | arguable (REFUND?) |
+| "ordered 3 weeks ago... if not by Friday I want my money back" | REFUND | 78% | arguable (two issues) |
+
+**Takeaways to say in an interview:**
+- 99.9% says the **dataset is easy** (short, clean, template-like), not that the problem is solved.
+- On wording it hasn't seen, the model guesses, **but its confidence drops** (19–41% vs ~99% normally).
+  That's useful: **auto-route only above a confidence threshold, send the rest to a human.**
+- This is exactly where an LLM might earn its cost: understanding meaning instead of matching words. Session 3
+  measures that.
+
+### Problems hit and how they were fixed
+- **Leakage from duplicates:** found by checking before training, not after.
+- **Security warning on loading the model file:** `joblib` files can run code when loaded. We only load the model we
+  trained ourselves, which is never downloaded or shared (gitignored). Documented in the code.

@@ -2,3 +2,7 @@
 pandas        # tables and analysis
 datasets      # download the ticket dataset from Hugging Face
 matplotlib    # charts for docs/img/
+
+# Session 2: machine learning baseline
+scikit-learn  # TF-IDF + logistic regression, metrics
+pytest        # tests in tests/
