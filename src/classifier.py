@@ -32,7 +32,7 @@ RANDOM_STATE = 42    # fixed seed: the same split every run (Session 3 reuses it
 def load_tickets():
     """All tickets, with duplicate messages removed so a test ticket never has a twin in training."""
     with sqlite3.connect(DB_PATH) as conn:
-        df = pd.read_sql("SELECT id, message, category FROM tickets", conn)
+        df = pd.read_sql("SELECT id, message, category, intent FROM tickets", conn)
     key = df["message"].str.lower().str.strip()
     return df[~key.duplicated()].reset_index(drop=True)
 

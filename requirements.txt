@@ -10,3 +10,5 @@ pytest        # tests in tests/
 # Session 3: LLM and RAG
 anthropic     # official Claude API client
 python-dotenv # loads the API key from .env
+sentence-transformers  # local, free embeddings for finding help articles
+ollama        # client for the local LLM

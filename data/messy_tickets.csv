@@ -1,0 +1,45 @@
+message,category
+"you charged my card twice this month!!! fix it",PAYMENT
+"payment keeps failing at checkout, tried 3 different cards. is your site broken or what",PAYMENT
+"hi, my bank says the transaction was blocked?? what do i do now, i really need this order",PAYMENT
+"can i pay with paypal or do u only take cards",PAYMENT
+"is klarna-style pay later thing available or nah",PAYMENT
+"the app keeps logging me out every 5 min, super annoying",ACCOUNT
+"forgot my pw and the reset mail never shows up. been waiting an hour",ACCOUNT
+"i want to upgrade to the gold thing, how",ACCOUNT
+"pls remove all my data and close my profile, i dont use your shop anymore",ACCOUNT
+"Hello, I have been trying to register for two days now and every time I click the confirm link it says expired. Can someone look into it, thanks",ACCOUNT
+"do u ship to bulgaria",DELIVERY
+"whats the fastest way to get it before saturday? its a birthday present",DELIVERY
+"how many days for delivery to germany usually",DELIVERY
+"can i pick it up from a locker instead of home delivery",DELIVERY
+"I moved last week, please make sure my next order goes to the new place",SHIPPING
+"typo in my street name on the order i just made, house number is 14 not 41!!",SHIPPING
+"need to add my office as a second adress for deliveries",SHIPPING
+"how long do I have to send back a jacket I dont like",REFUND
+"returned the shoes 2 weeks ago, still no money back. where is it",REFUND
+"the kettle arrived broken, i want my money back not a replacement",REFUND
+"Hello, I ordered 3 weeks ago and still nothing. If it doesn't come by Friday I want my money back.",REFUND
+"can i get a refund on a gift card",REFUND
+"ordered the wrong size, can i still change it? havent got shipping email yet",ORDER
+"where is my parcel?? tracking hasnt moved since monday",ORDER
+"i want to cancel the order i placed this morning before it ships",ORDER
+"how do i actually buy something, i cant find the checkout button on mobile",ORDER
+"it says delivered but theres nothing at my door",ORDER
+"need an invoice with my company VAT number for accounting",INVOICE
+"the invoice shows the wrong amount, i paid less with a discount code",INVOICE
+"where can i download receipts for my last 3 orders",INVOICE
+"if i quit my annual gold plan now do i have to pay something extra",CANCEL
+"whats the penalty for ending the yearly membership early",CANCEL
+"stop sending me promo emails every day!!",SUBSCRIPTION
+"how do i sign up for the newsletter to get the discount code",SUBSCRIPTION
+"I want to speak to a real person, not a bot",CONTACT
+"what are your phone support hours",CONTACT
+"Is there an email I can write to? the chat doesnt work for me",CONTACT
+"your courier threw my package over the fence, absolutely unacceptable service",FEEDBACK
+"just wanted to say the support girl yesterday was amazing, thank you",FEEDBACK
+"I'd like to leave a review for the blender I bought",FEEDBACK
+"worst shopping experience ever, 3 emails and nobody replies. I want to file an official complaint",FEEDBACK
+"hey so i bought a lamp last month and it flickers now, also my account still shows the old email even tho i changed it. which one do i even ask about first lol",REFUND
+"Good afternoon. I recently received an order that was missing one of the three items I paid for. The packing slip lists all three. Please advise how to get the missing item or a refund for it.",REFUND
+"wat r ur delivery options n prices",DELIVERY

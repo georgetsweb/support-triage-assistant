@@ -138,7 +138,95 @@ Six realistic tickets written by hand (anecdotal, not a benchmark):
 - This is exactly where an LLM might earn its cost: understanding meaning instead of matching words. Session 3
   measures that.
 
-### Problems hit and how they were fixed
+### Problems hit and how they were fixed (Session 2)
 - **Leakage from duplicates:** found by checking before training, not after.
 - **Security warning on loading the model file:** `joblib` files can run code when loaded. We only load the model we
   trained ourselves, which is never downloaded or shared (gitignored). Documented in the code.
+
+---
+
+## Session 3: Generative AI (RAG and the ML vs LLM comparison)
+
+### What was built
+- `data/kb/`: 22 synthetic help articles for one fictional store, covering all 27 intents. One consistent set of
+  policies (30-day returns, 5-10 day bank refunds...) so articles never contradict each other.
+- `src/llm.py`: one shared Claude client (key loaded from `.env`), model names, and cost per call from token counts.
+- `src/rag.py`: embeds the articles, finds the top 3 for a ticket, and has Claude Opus draft a reply that cites them.
+- `data/messy_tickets.csv`: 44 hand-written realistic tickets with labels (typos, slang, two issues in one).
+- `src/llm_classifier.py`: classifies 200 clean test tickets + the 44 messy ones with four methods, stores every
+  prediction in SQLite, and writes the comparison to `docs/results.md`.
+- `tests/test_rag.py`: 4 more tests (8 total), none of which call the paid API.
+
+### How RAG works (plain version)
+1. **Embeddings:** a small local model (`all-MiniLM-L6-v2`, free, ~90 MB) turns any text into a list of 384 numbers
+   that captures its *meaning*. Texts about the same thing get similar numbers even with no words in common
+   ("charged twice" ≈ "duplicate payment").
+2. **Retrieval:** embed all 22 articles once; for a ticket, embed it and take the 3 closest articles
+   (cosine similarity). With 22 articles a plain numpy array is enough; no vector database needed.
+3. **Generation:** send Claude the ticket plus only those 3 articles, with rules: use only these facts, don't
+   guess, say a colleague will follow up if the answer isn't there, and list the titles used on a "Sources:" line.
+4. **Check:** code verifies every cited title is one of the articles actually provided.
+
+Why RAG instead of just asking the LLM? Without the articles it would invent plausible but wrong policies.
+RAG keeps answers **grounded** in the company's own documents, **traceable** (sources), and **easy to update**
+(edit an article, no retraining).
+
+### Results
+
+**Retrieval (all 4,875 test tickets, free):** the right article is ranked **1st for 70.2%** of tickets and is in
+the **top 3 for 91.9%**. That's why we pass 3 articles, not 1: in one example the top hit was wrong but Claude
+picked the right two from the three.
+
+**Reply drafts:** 3 of 3 stuck to the articles and cited them correctly. Cost about $0.012 per reply with Opus.
+
+**Classification: ML vs three LLMs**
+
+| Method | Clean (n=200) | Messy (n=44) | Cost per 1,000 tickets | Median seconds per ticket |
+|---|---|---|---|---|
+| ML: TF-IDF + logistic regression | 99.5% | 56.8% | $0.00 | 0.001 |
+| Claude Haiku 5.5 | 99.0% | 93.2% | $0.07 | 1.03 |
+| Local: Qwen3 8B (Ollama, RTX 3070) | 94.0% | 86.4% | $0.00 | 0.18 |
+| Claude Opus 5.5 | 99.0% | 97.7% | $2.92 | 1.23 |
+
+Total API spend for Session 3: about **$0.77** of the $5 budget.
+
+### What the numbers say (the interview story)
+- **On clean, template-like tickets, the free ML model is as good as any LLM.** Paying for an LLM there buys nothing.
+- **On realistic messy tickets, the ML model collapses (57%) and every LLM holds up.** The ML model matches words;
+  LLMs understand meaning ("charged twice" is a payment problem even without the word "payment").
+- **Haiku gives most of Opus's accuracy at about 1/40 of the price.** Opus's extra 4.5 points on the messy set is
+  2 tickets out of 44, too few to call it a real difference.
+- **The local model is free, private and the fastest LLM here** (no network round trip), but less accurate.
+- **A sensible design:** ML first (free, instant); if its confidence is low, send the ticket to Haiku. Most clean
+  tickets never cost anything, and the hard ones get an LLM. (Built in Session 4.)
+
+### Caveats I'd mention myself
+- **The messy set is small (44) and I wrote and labelled it with AI help.** One ticket = 2.3 points, so small gaps
+  are noise. A real evaluation would use a few hundred real tickets labelled by the support team.
+- **Some "mistakes" are label quirks, not errors.** In this dataset "delivery *address*" tickets are labelled
+  SHIPPING and "shipping *options*" are labelled DELIVERY, the opposite of what the words suggest. The ML model
+  learned the quirk from 19k examples; the LLMs only see the category names and descriptions, which explains most
+  of the local model's clean-set misses. Opus's two clean "misses" ("when will my package arrive?" -> ORDER) are
+  arguably right. **Lesson: clear category definitions matter as much as the model.** Next step would be sharper
+  descriptions in the prompt.
+- **Tickets with two issues have no single right answer** (e.g. "late, and if not by Friday I want a refund").
+  In a real system, ask the support team how they want those routed.
+
+### Decisions and trade-offs
+- **Structured outputs:** the API is told the answer must be JSON with a category from a fixed list of 11. No
+  parsing of free text, no made-up categories.
+- **Low "effort" for classification, medium for replies:** classification is easy, so less reasoning = cheaper and
+  faster; replies need more care.
+- **Every prediction is saved, and re-runs skip finished tickets:** never pay twice; the comparison can be rebuilt
+  at any time. A per-run budget guard ($2.50) stops paid calls if something loops.
+- **Refusal fallback only for reply drafts:** if Opus declines a draft, Anthropic retries on another model. Not
+  used for the comparison, because a fallback would mix two models into one row of results.
+- **Same prompt and schema for every LLM**, so the comparison is fair.
+- **Local model: Qwen3 8B**, chosen because it fits fully in the 3070's 8 GB of GPU memory. Stored on G:.
+
+### Problems hit and how they were fixed (Session 3)
+- **Writing 22 files in one shell command failed** on a quoting error; nothing had been written, so each was
+  written separately and then checked automatically (all 27 intents covered, all cross-references valid).
+- **Ollama's background server didn't start** after install; started it directly with the model folder on G:.
+- **The local model's 94% looked bad** until the mistakes showed it was the label quirk above. Lesson: read the
+  errors before drawing conclusions from a number.
