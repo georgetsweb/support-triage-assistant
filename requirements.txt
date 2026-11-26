@@ -6,3 +6,7 @@ matplotlib    # charts for docs/img/
 # Session 2: machine learning baseline
 scikit-learn  # TF-IDF + logistic regression, metrics
 pytest        # tests in tests/
+
+# Session 3: LLM and RAG
+anthropic     # official Claude API client
+python-dotenv # loads the API key from .env
